@@ -1,14 +1,14 @@
 import mill.define.Target
 import mill.define.TaskModule
-
 import $ivy.`org.seleniumhq.selenium:selenium-firefox-driver:3.9.1`
 import $ivy.`org.seleniumhq.selenium:selenium-support:3.9.1`
+import org.openqa.selenium.firefox.FirefoxOptions
 
 object scraper extends TaskModule {
 
   def defaultCommandName() = "run"
 
-  def run(searchPath: String) = Target.command {
+  def run(searchPath: String, headless: Boolean = true) = Target.command {
 
     import org.openqa.selenium.By
     import org.openqa.selenium.support.ui.{WebDriverWait, ExpectedConditions}
@@ -29,7 +29,9 @@ object scraper extends TaskModule {
 
     os.makeDir.all(outputDirectory)
 
-    val driver = new FirefoxDriver()
+    val driver = new FirefoxDriver(
+      new FirefoxOptions().setHeadless(headless)
+    )
     val waitDriver = new WebDriverWait(driver, 10)
 
     object selectors {
