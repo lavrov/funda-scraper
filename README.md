@@ -1,3 +1,13 @@
+Funda.nl scraper
+=============
+
+Prerequisites
+------------
+
+```shell script
+$ apt install openjdk-14-jdk firefox firefox-geckodriver
+```
+
 Run
 ---
 
