@@ -1,14 +1,63 @@
-import mill._
-import mill.scalalib._
+import mill.define.Target
+import mill.define.TaskModule
 
-object scraper extends ScalaModule {
+import $ivy.`org.seleniumhq.selenium:selenium-firefox-driver:3.9.1`
+import $ivy.`org.seleniumhq.selenium:selenium-support:3.9.1`
 
-  def scalaVersion = "2.13.2"
+object scraper extends TaskModule {
 
-  def ivyDeps = Agg(
-    ivy"com.lihaoyi::os-lib:0.7.0",
-    ivy"org.seleniumhq.selenium:selenium-firefox-driver:3.9.1",
-    ivy"org.seleniumhq.selenium:selenium-support:3.9.1",
-  )
+  def defaultCommandName() = "run"
+
+  def run(searchPath: String) = Target.command {
+
+    import org.openqa.selenium.By
+    import org.openqa.selenium.support.ui.{WebDriverWait, ExpectedConditions}
+    import org.openqa.selenium.firefox.FirefoxDriver
+
+    import java.time.Instant
+    import java.time.temporal.ChronoUnit
+
+    import scala.jdk.CollectionConverters._
+
+    val currentTime = Instant.now()
+    val searchUrl = s"https://funda.nl$searchPath"
+    val outputDirectory = {
+      val dataDirectory = os.pwd / "data"
+      val searchResultDirectory = os.Path(searchPath).segments.foldLeft(dataDirectory)(_ / _)
+      searchResultDirectory / currentTime.truncatedTo(ChronoUnit.SECONDS).toString
+    }
+
+    os.makeDir.all(outputDirectory)
+
+    val driver = new FirefoxDriver()
+    val waitDriver = new WebDriverWait(driver, 10)
+
+    object selectors {
+      val `search-results` = By.className("search-results")
+    }
+
+    def scrapeSearchResults(url: String, index: Int = 0): Unit = {
+
+      driver.navigate.to(url)
+
+      waitDriver.until(ExpectedConditions.presenceOfElementLocated(selectors.`search-results`))
+
+      val pageSource = driver.getPageSource()
+
+      os.write(outputDirectory / s"$index.html", pageSource)
+
+      val nextPageUrl = driver
+        .findElementByClassName("pagination")
+        .findElements(By.cssSelector("a[rel='next']")).asScala.headOption
+        .map(_.getAttribute("href"))
+
+      for (url <- nextPageUrl) scrapeSearchResults(url, index + 1)
+    }
+
+    try
+      scrapeSearchResults(searchUrl)
+    finally
+      driver.close
+  }
 
 }
