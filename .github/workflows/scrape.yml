@@ -25,7 +25,7 @@ jobs:
       run: sudo apt update && sudo apt install firefox firefox-geckodriver
 
     - name: Scrape
-      run: ./mill scraper.run --searchPath /koop/hoofddorp/0-400000/bouwperiode-2001-2010/bouwperiode-na-2010/
+      run: ./mill scraper.run --url https://www.funda.nl/koop/hoofddorp/0-400000/bouwperiode-2001-2010/bouwperiode-na-2010/
 
     - name: Commit
       uses: stefanzweifel/git-auto-commit-action@v4.1.5
